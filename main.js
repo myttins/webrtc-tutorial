@@ -37,23 +37,30 @@ const createPeerConnection = async (sdpType) => {
 
   peerConnection.onicecandidate = async (event) => {
     if (event.candidate) {
+      console.log(
+        "before createOffer",
+        JSON.stringify(peerConnection.localDescription)
+      );
       document.getElementById(sdpType).value = JSON.stringify(
         peerConnection.localDescription
       );
+    //   document.getElementById(sdpType).value = JSON.stringify(
+    //    'empty'
+    //   );
     }
   };
 };
 
 let createOffer = async () => {
-  createPeerConnection('offer-sdp');
-  let offer = await peerConnection.createOffer();
-  await peerConnection.setLocalDescription(offer);
-
+  createPeerConnection("offer-sdp");
+  let offer = await peerConnection.createOffer(); // resolves to RTCSessionDescription object
+  await peerConnection.setLocalDescription(offer); // sets the localDescription on peerConnection
+  console.log("after createOffer", JSON.stringify(offer));
   document.getElementById("offer-sdp").value = JSON.stringify(offer);
 };
 
 const createAnswer = async () => {
-  createPeerConnection('answer-sdp');
+  createPeerConnection("answer-sdp");
   let offer = document.getElementById("offer-sdp").value;
   if (!offer) return alert("Retrieve offer from peer first...");
 
