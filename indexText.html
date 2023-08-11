@@ -30,7 +30,9 @@
   <script>
 
     let localStream;
+    let remoteStream;
     let peerConnection;
+
 
     const createPeerConnection = async (sdpType) => {
       peerConnection = new RTCPeerConnection();
@@ -44,16 +46,16 @@
           document.getElementById("textFeed").innerText += e.data + '\n';
         };
       } 
-      
+
       if (sdpType === "answer") {
         // IF RECEIVER: a function that gets triggered when data channel is connected
         peerConnection.ondatachannel = async (e) => {
 
           // connects received channel to our peerConnection object
-          peerConnection.channel = e.channel;
+          remoteStream = e.channel;
           
           // specify a function that invokes when an onmessage event is triggered
-          peerConnection.channel.onmessage = (e) => {
+          remoteStream.onmessage = (e) => {
             document.getElementById("textFeed").innerText += e.data + '\n';
           };
         };
@@ -101,7 +103,7 @@
       e.preventDefault();
       // localStream is only declared if we are initiating the offer. !localStream means we are on the "answer" side
       if (!localStream) {
-        peerConnection.channel.send(JSON.stringify(e.target[0].value));
+        remoteStream.send(JSON.stringify(e.target[0].value));
       } else {
         localStream.send(JSON.stringify(e.target[0].value))
       }
