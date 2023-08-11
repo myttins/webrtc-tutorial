@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>webRTC</title>
+    <link rel="stylesheet" type="text/css" media="screen" href="main.css" />
+  </head>
+  <body>
+    <!-- <div id="videos">
+        <video class="video-player" id="user-1" autoplay playsinline></video>
+        <video class="video-player" id="user-2" autoplay playsinline></video>
+    </div> -->
+    <button id="create-offer">Create Offer</button>
+    <label>SDP Offer</label>
+    <textarea id="offer"></textarea>
+
+    <button id="create-answer">Create Answer</button>
+    <label>SDP Answer</label>
+    <textarea id="answer"></textarea>
+
+    <button id="add-answer">Add Answer</button>
+
+    <form id="input-form">
+      <input type="text" placeholder="enter messages to send here..." style="height: 30px; width: 100%; font-size: x-large; margin-top: 30px; margin-bottom: 20px;" />
+    </form>
+
+    <div id="textFeed" style="width: 100%; margin-top: 20px;">received messages shown below...</div>
+  </body>
+  <script>
+
+    let localStream;
+    let peerConnection;
+
+    const createPeerConnection = async (sdpType) => {
+      peerConnection = new RTCPeerConnection();
+
+      if (sdpType === "offer") {
+        // if we are initiating the offer, assign a RTCDataStream channel to localstream
+        localStream = peerConnection.createDataChannel("textChannel");
+
+        // specify a function that invokes when an onmessage event is triggered
+        localStream.onmessage = async (e) => {
+          document.getElementById("textFeed").innerText += e.data + '\n';
+        };
+      } 
+      
+      if (sdpType === "answer") {
+        // IF RECEIVER: a function that gets triggered when data channel is connected
+        peerConnection.ondatachannel = async (e) => {
+
+          // connects received channel to our peerConnection object
+          peerConnection.channel = e.channel;
+          
+          // specify a function that invokes when an onmessage event is triggered
+          peerConnection.channel.onmessage = (e) => {
+            document.getElementById("textFeed").innerText += e.data + '\n';
+          };
+        };
+      }
+      // icecandidate trickle function: applies to both offer and answer sides 
+      peerConnection.onicecandidate = async (event) => {
+          if (event.candidate) {
+            document.getElementById(sdpType).value = JSON.stringify(
+              peerConnection.localDescription
+            );
+          }
+        };
+    };
+
+    const createOffer = async () => {
+      createPeerConnection("offer");
+
+      let offer = await peerConnection.createOffer();
+      await peerConnection.setLocalDescription(offer); // sets the localDescription on peerConnection
+
+      document.getElementById("offer").value = JSON.stringify(offer);
+    };
+
+    const createAnswer = async () => {
+      createPeerConnection("answer");
+
+      let offer = JSON.parse(document.getElementById("offer").value);
+      await peerConnection.setRemoteDescription(offer);
+
+      let answer = await peerConnection.createAnswer();
+      await peerConnection.setLocalDescription(answer);
+
+      document.getElementById("answer").value = JSON.stringify(answer);
+    };
+
+    const addAnswer = async () => {
+      let answer = JSON.parse(document.getElementById("answer").value);
+      if (!peerConnection.currentRemoteDescription) {
+        peerConnection.setRemoteDescription(answer);
+      }
+    };
+
+    const submitMessage = async (e) => {
+      // prevents page reload when clicked
+      e.preventDefault();
+      // localStream is only declared if we are initiating the offer. !localStream means we are on the "answer" side
+      if (!localStream) {
+        peerConnection.channel.send(JSON.stringify(e.target[0].value));
+      } else {
+        localStream.send(JSON.stringify(e.target[0].value))
+      }
+      // resets text field for new message
+      e.target.reset();
+    };
+
+    document
+      .getElementById("input-form")
+      .addEventListener("submit", submitMessage);
+    document
+      .getElementById("create-offer")
+      .addEventListener("click", createOffer);
+    document
+      .getElementById("create-answer")
+      .addEventListener("click", createAnswer);
+    document.getElementById("add-answer").addEventListener("click", addAnswer);
+  </script>
+</html>

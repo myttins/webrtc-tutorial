@@ -11,6 +11,7 @@ let servers = {
   ],
 };
 
+// creates initial video feed on left video screen
 const init = async () => {
   localStream = await navigator.mediaDevices.getUserMedia({
     video: true,
@@ -22,6 +23,7 @@ const init = async () => {
 const createPeerConnection = async (sdpType) => {
   peerConnection = new RTCPeerConnection(servers);
 
+  // this part just addes video input to the stream of data output (not apart of the initial connection setup)
   remoteStream = new MediaStream();
   document.getElementById("user-2").srcObject = remoteStream;
 
@@ -35,6 +37,7 @@ const createPeerConnection = async (sdpType) => {
     });
   };
 
+  // part of the initial connection setup
   peerConnection.onicecandidate = async (event) => {
     if (event.candidate) {
       console.log(
@@ -44,9 +47,6 @@ const createPeerConnection = async (sdpType) => {
       document.getElementById(sdpType).value = JSON.stringify(
         peerConnection.localDescription
       );
-    //   document.getElementById(sdpType).value = JSON.stringify(
-    //    'empty'
-    //   );
     }
   };
 };
