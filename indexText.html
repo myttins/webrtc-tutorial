@@ -22,17 +22,27 @@
     <button id="add-answer">Add Answer</button>
 
     <form id="input-form">
-      <input type="text" placeholder="enter messages to send here..." style="height: 30px; width: 100%; font-size: x-large; margin-top: 30px; margin-bottom: 20px;" />
+      <input
+        type="text"
+        placeholder="enter messages to send here..."
+        style="
+          height: 30px;
+          width: 100%;
+          font-size: x-large;
+          margin-top: 30px;
+          margin-bottom: 20px;
+        "
+      />
     </form>
 
-    <div id="textFeed" style="width: 100%; margin-top: 20px;">received messages shown below...</div>
+    <div id="textFeed" style="width: 100%; margin-top: 20px">
+      received messages shown below... <br>
+    </div>
   </body>
   <script>
-
     let localStream;
     let remoteStream;
     let peerConnection;
-
 
     const createPeerConnection = async (sdpType) => {
       peerConnection = new RTCPeerConnection();
@@ -43,31 +53,29 @@
 
         // specify a function that invokes when an onmessage event is triggered
         localStream.onmessage = async (e) => {
-          document.getElementById("textFeed").innerText += e.data + '\n';
+          document.getElementById("textFeed").innerText += e.data + "\n";
         };
-      } 
+      }
 
       if (sdpType === "answer") {
         // IF RECEIVER: a function that gets triggered when data channel is connected
         peerConnection.ondatachannel = async (e) => {
-
           // connects received channel to our peerConnection object
-          remoteStream = e.channel;
-          
-          // specify a function that invokes when an onmessage event is triggered
-          remoteStream.onmessage = (e) => {
-            document.getElementById("textFeed").innerText += e.data + '\n';
+          localStream = e.channel;
+          localStream.onmessage = async (e) => {
+            document.getElementById("textFeed").innerText += e.data + "\n";
           };
         };
       }
-      // icecandidate trickle function: applies to both offer and answer sides 
+
+      // icecandidate trickle function: applies to both offer and answer sides
       peerConnection.onicecandidate = async (event) => {
-          if (event.candidate) {
-            document.getElementById(sdpType).value = JSON.stringify(
-              peerConnection.localDescription
-            );
-          }
-        };
+        if (event.candidate) {
+          document.getElementById(sdpType).value = JSON.stringify(
+            peerConnection.localDescription
+          );
+        }
+      };
     };
 
     const createOffer = async () => {
@@ -101,12 +109,9 @@
     const submitMessage = async (e) => {
       // prevents page reload when clicked
       e.preventDefault();
-      // localStream is only declared if we are initiating the offer. !localStream means we are on the "answer" side
-      if (!localStream) {
-        remoteStream.send(JSON.stringify(e.target[0].value));
-      } else {
-        localStream.send(JSON.stringify(e.target[0].value))
-      }
+
+      // sends value inside input box
+      localStream.send(JSON.stringify(e.target[0].value));
       // resets text field for new message
       e.target.reset();
     };
